@@ -34,10 +34,10 @@ jobs:
           output_format: auto
 
       - name: Lint Markdown files with Markdownlint
-        uses: avto-dev/markdown-lint-action@v0.0.9
+        uses: DavidAnson/markdownlint-cli2-action@v22
         with:
           config: .github/linters/.markdownlint.json
-          args: '**/*.md'
+          globs: '**/*.md'
 
       - name: Lint Shell scripts with ShellCheck
         uses: luizm/action-sh-checker@v0.8.0
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy filesystem scanner
-        uses: aquasecurity/trivy-action@0.68.2
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'fs'
           scan-ref: '.'
