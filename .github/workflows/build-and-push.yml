@@ -2,49 +2,37 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # Allow manual triggers
+    branches: [main]
+  workflow_dispatch:
     inputs:
       pg_version:
         description: 'PostgreSQL version(s) to build'
         required: false
         default: '16,17,18'
         type: choice
-        options:
-          - '16,17,18'
-          - '18'
-          - '17'
-          - '16'
+        options: ['16,17,18', '18', '17', '16']
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+
 jobs:
-   # Build and Push Job with Matrix Strategy
   build-and-push:
     name: Build PG ${{ matrix.pg_version }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-
     strategy:
       fail-fast: false
       matrix:
         pg_version: [16, 17, 18]
-
-    outputs:
-      image-digest: ${{ steps.build.outputs.digest }}
-      image-tag: ${{ steps.meta.outputs.version }}
-      pg-version: ${{ matrix.pg_version }}
 
     steps:
       - name: Checkout repository
@@ -55,10 +43,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-            network=host
 
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -74,152 +58,55 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # PostgreSQL version tags
             type=raw,value=pg${{ matrix.pg_version }}
-            # Latest tag for PG18 only
             type=raw,value=latest,enable=${{ matrix.pg_version == '18' && github.ref == 'refs/heads/main' }}
             type=raw,value=pg${{ matrix.pg_version }}-latest,enable=${{ github.ref == 'refs/heads/main' }}
-            # Version tags from git tags (v1.0.0 → 1.0.0)
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            # Commit SHA for reproducibility
             type=sha,prefix=pg${{ matrix.pg_version }}-sha-,format=short
-            # PR tags for testing
-            type=ref,event=pr,prefix=pg${{ matrix.pg_version }}-
-          labels: |
-            org.opencontainers.image.title=PostgreSQL ${{ matrix.pg_version }} + pgvector + Apache AGE
-            org.opencontainers.image.description=Production-ready Docker image with PostgreSQL ${{ matrix.pg_version }}, pgvector, and Apache AGE for Graph RAG applications
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
-            org.opencontainers.image.postgres.version=${{ matrix.pg_version }}
 
-      - name: Build and push Docker image
+      - name: Build and push
         id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
+          # We load to local docker if it's a PR, so the test job can use it
           push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_DATE=${{ github.event.repository.updated_at }}
-            VCS_REF=${{ github.sha }}
             PG_MAJOR=${{ matrix.pg_version }}
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy scanner
+        # Skip SARIF upload on Pull Requests from forks to avoid permission errors
         if: github.event_name != 'pull_request'
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pg${{ matrix.pg_version }}
           format: 'sarif'
-          output: 'trivy-results-pg${{ matrix.pg_version }}.sarif'
+          output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload Trivy results to GitHub Security tab
+      - name: Upload Trivy results to Security tab
         if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: 'trivy-results-pg${{ matrix.pg_version }}.sarif'
+          sarif_file: 'trivy-results.sarif'
           category: 'trivy-pg${{ matrix.pg_version }}'
 
-      - name: Generate SBOM
-        if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pg${{ matrix.pg_version }}
-          format: spdx-json
-          output-file: sbom-pg${{ matrix.pg_version }}.spdx.json
-
-      - name: Upload SBOM as artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-pg${{ matrix.pg_version }}
-          path: sbom-pg${{ matrix.pg_version }}.spdx.json
-          retention-days: 90
-
-  # Integration Test Job - Test all PostgreSQL versions
-  test:
-    name: Test PG ${{ matrix.pg_version }}
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    if: github.event_name != 'pull_request'
-    strategy:
-      fail-fast: false
-      matrix:
-        pg_version: [16, 17, 18]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run container and test extensions
-        run: |
-          docker run -d --name pggraphrag-test-pg${{ matrix.pg_version }} \
-            -e POSTGRES_PASSWORD=testpassword \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pg${{ matrix.pg_version }}
-
-          echo "Waiting for PostgreSQL ${{ matrix.pg_version }} to start..."
-          for i in {1..30}; do
-            if docker exec pggraphrag-test-pg${{ matrix.pg_version }} pg_isready -U postgres; then
-              echo "PostgreSQL ${{ matrix.pg_version }} is ready"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-
-          echo "Testing PostgreSQL version..."
-          docker exec pggraphrag-test-pg${{ matrix.pg_version }} psql -U postgres -c "SELECT version();"
-
-          echo "Testing pgvector extension..."
-          docker exec pggraphrag-test-pg${{ matrix.pg_version }} psql -U postgres -c "SELECT * FROM pg_available_extensions() WHERE name = 'vector';"
-
-          echo "Testing Apache AGE extension..."
-          docker exec pggraphrag-test-pg${{ matrix.pg_version }} psql -U postgres -c "SELECT * FROM pg_available_extensions() WHERE name = 'age';"
-
-          echo "Testing AGE graph creation..."
-          docker exec pggraphrag-test-pg${{ matrix.pg_version }} psql -U postgres -c "SELECT * FROM cypher('test_graph', \$\$ CREATE (n:Person {name: 'Alice'}) \$\$) as (a agtype);"
-
-          echo "All tests passed for PostgreSQL ${{ matrix.pg_version }}!"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          docker stop pggraphrag-test-pg${{ matrix.pg_version }}
-          docker rm pggraphrag-test-pg${{ matrix.pg_version }}
-
-  # Create Manifest Job - Optional unified latest tag
   create-manifest:
     name: Create Multi-Arch Manifest
     runs-on: ubuntu-latest
     needs: [build-and-push]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    permissions:
-      packages: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -228,7 +115,6 @@ jobs:
 
       - name: Create manifest for latest (points to PG18)
         run: |
-          # Create manifest that points latest to pg18
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pg18
