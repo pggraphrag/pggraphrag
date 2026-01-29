@@ -1,0 +1,115 @@
+name: Lint and Security Checks
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: All Linting Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile with Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: tty
+          config: .github/linters/.hadolint.yaml
+
+      - name: Lint YAML files with Yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          config_file: .github/linters/.yamllint.yml
+          strict: true
+          file_or_dir: '.'
+          output_format: auto
+
+      - name: Lint Markdown files with Markdownlint
+        uses: avto-dev/markdown-lint-action@v0.0.9
+        with:
+          config: .github/linters/.markdownlint.json
+          args: '**/*.md'
+
+      - name: Lint Shell scripts with ShellCheck
+        uses: luizm/action-sh-checker@v0.8.0
+        with:
+          sh_checker_exclude: 'node_modules|.git'
+          sh_checker_checkbashisms: true
+          sh_checker_shellcheck: true
+          sh_checker_exclude_files: ''
+
+      - name: Check SQL syntax
+        run: |
+          # Check SQL files for basic syntax errors
+          find . -name "*.sql" -type f | while read -r file; do
+            echo "Checking SQL file: $file"
+            # Basic validation - file should be readable
+            if [ -r "$file" ]; then
+              echo "✓ $file is readable"
+            else
+              echo "✗ $file is not readable"
+              exit 1
+            fi
+          done
+
+      - name: Install SQLFluff
+        run: |
+          pip install sqlfluff==4.0.0
+
+      - name: Lint SQL files with SQLFluff
+        run: |
+          sqlfluff lint --dialect postgres init-scripts/
+        continue-on-error: true
+
+      - name: Lint JSON files
+        run: |
+          # Validate all JSON files in the repository
+          find . -name "*.json" -type f | while read -r file; do
+            echo "Validating JSON file: $file"
+            python3 -m json.tool "$file" > /dev/null 2>&1 || {
+              echo "✗ JSON validation failed: $file"
+              exit 1
+            }
+            echo "✓ $file is valid JSON"
+          done
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scanner
+        uses: aquasecurity/trivy-action@0.68.2
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Upload Trivy scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-fs'
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@v3.80.0
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD

@@ -1,0 +1,38 @@
+---
+extends: default
+
+ignore: |
+  .git/
+  node_modules/
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+
+  comments:
+    min-spaces-from-content: 1
+
+  comments-indentation: {}
+
+  document-start: disable
+
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 0

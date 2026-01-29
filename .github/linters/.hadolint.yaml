@@ -1,0 +1,26 @@
+# Hadolint Configuration
+# See https://github.com/hadolint/hadolint for configuration options
+
+# Fail on errors
+failure-threshold: error
+
+# Rules to ignore
+ignored:
+  - DL3008  # Pin versions in apk add (we use latest for pgvector from APT)
+  - DL3013  # Pin versions in pip (we don't use pip)
+  - DL3009  # Drop root user (we switch to postgres user)
+
+# Specific rule configurations
+strict-labels: false
+
+# Label schema (recommended for production images)
+label-schema:
+  description: 'Production-ready Docker image with PostgreSQL 18, pgvector, and Apache AGE'
+  maintainer: 'pggraphrag contributors'
+  version: '1.0.0'
+
+# Override default rules
+override:
+  # Use specific base image versions
+  error:
+    - DL3007

@@ -1,0 +1,89 @@
+name: Update Dependency Lock File
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-postgres-updates:
+    name: Check for PostgreSQL Base Image Updates
+    runs-on: ubuntu-latest
+    outputs:
+      pg16: ${{ steps.check-versions.outputs.pg16 }}
+      pg17: ${{ steps.check-versions.outputs.pg17 }}
+      pg18: ${{ steps.check-versions.outputs.pg18 }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check PostgreSQL versions for updates
+        id: check-versions
+        run: |
+          PG16_VERSION=$(docker run --rm alpine sh -c 'apk add --no-cache curl > /dev/null 2>&1 && curl -s "https://registry.hub.docker.com/v2/repositories/library/postgres/tags?page_size=100" | grep -o "\"name\":\"16\.[0-9.]*\"" | head -1 | sed "s/\"name\":\"//g; s/\"//g"')
+          PG17_VERSION=$(docker run --rm alpine sh -c 'apk add --no-cache curl > /dev/null 2>&1 && curl -s "https://registry.hub.docker.com/v2/repositories/library/postgres/tags?page_size=100" | grep -o "\"name\":\"17\.[0-9.]*\"" | head -1 | sed "s/\"name\":\"//g; s/\"//g"')
+          PG18_VERSION=$(docker run --rm alpine sh -c 'apk add --no-cache curl > /dev/null 2>&1 && curl -s "https://registry.hub.docker.com/v2/repositories/library/postgres/tags?page_size=100" | grep -o "\"name\":\"18\.[0-9.]*\"" | head -1 | sed "s/\"name\":\"//g; s/\"//g"')
+
+          echo "PostgreSQL 16 latest: $PG16_VERSION"
+          echo "PostgreSQL 17 latest: $PG17_VERSION"
+          echo "PostgreSQL 18 latest: $PG18_VERSION"
+
+          echo "pg16=$PG16_VERSION" >> $GITHUB_OUTPUT
+          echo "pg17=$PG17_VERSION" >> $GITHUB_OUTPUT
+          echo "pg18=$PG18_VERSION" >> $GITHUB_OUTPUT
+
+  create-issues:
+    name: Create Update Issues
+    runs-on: ubuntu-latest
+    needs: check-postgres-updates
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create issue if updates available
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pgVersions = ['16', '17', '18'];
+            const latestVersions = {
+              '16': '${{ needs.check-postgres-updates.outputs.pg16 }}',
+              '17': '${{ needs.check-postgres-updates.outputs.pg17 }}',
+              '18': '${{ needs.check-postgres-updates.outputs.pg18 }}'
+            };
+
+            for (const pg of pgVersions) {
+              const latest = latestVersions[pg];
+              if (latest) {
+                const body = `The latest PostgreSQL ${pg} version **${latest}** is available.\n\nPlease update the CI/CD workflow matrix to include the new version and test thoroughly before merging.\n\n**Current versions built:** 16, 17, 18\n\n**Priority:** Medium - PostgreSQL updates typically include security fixes and performance improvements.`;
+
+                // Check if similar issue already exists
+                const issues = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  labels: ['dependencies', 'docker', 'postgres'],
+                  per_page: 100
+                });
+
+                const existingIssue = issues.data.find(issue =>
+                  issue.title.includes(`Update PostgreSQL ${pg}`) ||
+                  issue.title.includes(latest)
+                );
+
+                if (!existingIssue) {
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: `Update PostgreSQL ${pg} base image to ${latest}`,
+                    body: body,
+                    labels: ['dependencies', 'docker', `postgres-${pg}`]
+                  });
+                  console.log(`Created issue for PostgreSQL ${pg}`);
+                } else {
+                  console.log(`Issue already exists for PostgreSQL ${pg}`);
+                }
+              }
+            }

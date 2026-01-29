@@ -1,0 +1,43 @@
+---
+name: Update README Badges
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-badges:
+    name: Update Badges in README
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update badges in README
+        run: |
+          # Extract username from repository
+          USERNAME=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+
+          # Update badges (simple sed approach)
+          sed -i.bak "s|https://github.com/[^/]*/pggraphrag|https://github.com/${USERNAME}/pggraphrag|g" README.md
+          sed -i.bak "s|ghcr\.io/[^/]*/pggraphrag|ghcr.io/${USERNAME}/pggraphrag|g" README.md
+
+          # Check if changes were made
+          if diff README.md README.md.bak > /dev/null; then
+            echo "No changes needed"
+            rm README.md.bak
+          else
+            echo "Badges updated"
+            rm README.md.bak
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git commit -m "docs: update badges to use correct repository"
+            git push
+          fi

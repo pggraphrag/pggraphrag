@@ -1,0 +1,53 @@
+# Git ignore files for pggraphrag
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test coverage
+coverage/
+*.coverage
+.coverage
+htmlcov/
+
+# Build artifacts
+*.tgz
+*.tar.gz
+
+# Pre-commit
+.pre-commit-config-local.yaml
+
+# Agents
+.claude
+.opencode
