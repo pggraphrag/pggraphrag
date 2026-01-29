@@ -18,21 +18,21 @@ RUN git clone --branch PG${PG_VERSION} --depth 1 https://github.com/apache/age.g
 WORKDIR /tmp/age
 RUN make PG_CONFIG=/usr/lib/postgresql/${PG_VERSION}/bin/pg_config install
 
+WORKDIR /tmp
+RUN git clone --branch v0.8.1 --depth 1 https://github.com/pgvector/pgvector.git
+WORKDIR /tmp/pgvector
+RUN make PG_CONFIG=/usr/lib/postgresql/${PG_VERSION}/bin/pg_config clean
+RUN make PG_CONFIG=/usr/lib/postgresql/${PG_VERSION}/bin/pg_config OPTFLAGS="" install
+
 # Stage 2: Runtime
 FROM postgres:${PG_VERSION}
 
-# 1. Install pgvector from APT
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && apt-get install -y \
-    postgresql-${PG_VERSION}-pgvector \
-    && rm -rf /var/lib/apt/lists/*
-
-# 2. Copy AGE artifacts
 COPY --from=builder /usr/lib/postgresql/${PG_VERSION}/lib/age.so /usr/lib/postgresql/${PG_VERSION}/lib/
-COPY --from=builder /usr/share/postgresql/${PG_VERSION}/extension/age* /usr/share/postgresql/${PG_VERSION}/extension/
+COPY --from=builder /usr/lib/postgresql/${PG_VERSION}/extension/age* /usr/share/postgresql/${PG_VERSION}/extension/
+COPY --from=builder /usr/lib/postgresql/${PG_VERSION}/lib/vector.so /usr/lib/postgresql/${PG_VERSION}/lib/
+COPY --from=builder /usr/share/postgresql/${PG_VERSION}/extension/vector* /usr/share/postgresql/${PG_VERSION}/extension/
 
-# 3. Persistence-safe config
+# Persistence-safe config
 # This ensures AGE is loaded even if a volume is already present
 RUN echo "shared_preload_libraries = 'age'" >> /usr/share/postgresql/postgresql.conf.sample
 
