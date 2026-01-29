@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     flex \
     libreadline-dev \
     zlib1g-dev \
+    ca-certificates \
     postgresql-server-dev-${PG_MAJOR} \
     && rm -rf /var/lib/apt/lists/*
 
