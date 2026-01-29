@@ -3,6 +3,10 @@ ARG PG_VERSION=18
 # Stage 1: Builder
 FROM postgres:${PG_VERSION} AS builder
 
+RUN apt-get update && \
+    apt-get install -y postgresql-common ca-certificates && \
+    sh -c "echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main' > /etc/apt/sources.list.d/pgdg.list"
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && apt-get install -y \
