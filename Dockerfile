@@ -1,57 +1,55 @@
+# Defaulting to the latest stable Postgres 18
 ARG PG_MAJOR=18
 
-# Stage 1: Builder
+# --- Stage 1: The Builder ---
 FROM postgres:${PG_MAJOR} AS builder
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+# Install build-essential and dependencies for AGE & pgvector
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    postgresql-client-${PG_MAJOR} \
+    git \
+    bison \
+    flex \
+    libreadline-dev \
+    zlib1g-dev \
     postgresql-server-dev-${PG_MAJOR} \
-    libpq-dev \
-    git bison flex libreadline-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /tmp
-RUN git clone --branch PG${PG_MAJOR} --depth 1 https://github.com/apache/age.git && \
-    git clone --branch v0.8.1 --depth 1 https://github.com/pgvector/pgvector.git
+# Create a staging area for all compiled binaries
+WORKDIR /tmp/build
 
+# 1. Build Apache AGE (Using the dedicated PG18 branch)
 WORKDIR /tmp/age
-RUN make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config install
+RUN git clone --branch PG${PG_MAJOR} --depth 1 https://github.com/apache/age.git . \
+    && make install DESTDIR=/tmp/build
 
+# 2. Build pgvector (Dynamically finding the latest release tag)
 WORKDIR /tmp/pgvector
-RUN make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config clean && \
-    make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config OPTFLAGS="" install
+RUN git clone https://github.com/pgvector/pgvector.git . && \
+    LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`) && \
+    git checkout $LATEST_TAG && \
+    make OPTFLAGS="" install DESTDIR=/tmp/build
 
-# Stage 2: Runtime
+# --- Stage 2: The Runtime ---
 FROM postgres:${PG_MAJOR}
 
-COPY --from=builder /usr/lib/postgresql/${PG_MAJOR}/lib/age.so /usr/lib/postgresql/${PG_MAJOR}/lib/
-COPY --from=builder /usr/share/postgresql/${PG_MAJOR}/extension/age* /usr/share/postgresql/${PG_MAJOR}/extension/
-COPY --from=builder /usr/lib/postgresql/${PG_MAJOR}/lib/vector.so /usr/lib/postgresql/${PG_MAJOR}/lib/
-COPY --from=builder /usr/share/postgresql/${PG_MAJOR}/extension/vector* /usr/share/postgresql/${PG_MAJOR}/extension/
+# Copy everything from the staging area in one clean layer
+COPY --from=builder /tmp/build /
 
-# Stage 3: Persistence-safe config
-# This ensures AGE is loaded even if a volume is already present
-RUN echo "shared_preload_libraries = 'age'" >> /usr/share/postgresql/postgresql.conf.sample
+# Update the sample config to ensure libraries load on startup
+RUN echo "shared_preload_libraries = 'age,vector'" >> /usr/share/postgresql/postgresql.conf.sample
 
+# Copy initialization scripts to enable extensions on first boot
 COPY init-scripts/ /docker-entrypoint-initdb.d/
 
-# Metadata labels - tracks latest stable components, not a custom version
-LABEL maintainer="pggraphrag contributors" \
-      description="PostgreSQL ${PG_MAJOR} with latest stable pgvector and Apache AGE" \
-      org.opencontainers.image.title="PostgreSQL ${PG_MAJOR} + pgvector + Apache AGE" \
-      org.opencontainers.image.description="Production-ready Docker image with PostgreSQL ${PG_MAJOR}, pgvector, and Apache AGE for Graph RAG applications" \
-      org.opencontainers.image.vendor="pggraphrag" \
-      org.opencontainers.image.postgres.version="${PG_MAJOR}" \
-      org.opencontainers.image.licenses="MIT"
-
+# Standard healthcheck to ensure Postgres is accepting connections
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD pg_isready -U ${POSTGRES_USER:-postgres} || exit 1
+
+LABEL description="Production-ready PostgreSQL ${PG_MAJOR} with Apache AGE & pgvector"
 
 USER postgres
 EXPOSE 5432
 
-# Passing the config flag here is a "fail-safe" for cloud environments
-CMD ["postgres", "-c", "shared_preload_libraries=age"]
+# The fail-safe command to ensure AGE and Vector are preloaded
+CMD ["postgres", "-c", "shared_preload_libraries=age,vector"]

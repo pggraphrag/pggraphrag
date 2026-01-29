@@ -108,7 +108,7 @@ jobs:
           build-args: |
             BUILD_DATE=${{ github.event.repository.updated_at }}
             VCS_REF=${{ github.sha }}
-            PG_VERSION=${{ matrix.pg_version }}
+            PG_MAJOR=${{ matrix.pg_version }}
 
       - name: Run Trivy vulnerability scanner
         if: github.event_name != 'pull_request'

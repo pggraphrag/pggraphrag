@@ -1,12 +1,15 @@
 -- Default extension helper for pgvector and Apache AGE
 -- Runs automatically on first container startup
--- Search path not configured here to allow user control
 
 DO $$
 DECLARE
     vector_version text;
     age_version text;
 BEGIN
+    -- Configure search path for Apache AGE 
+    SET search_path = ag_catalog, "$user", public;
+
+    -- Initialize pgvector
     IF NOT EXISTS (
         SELECT 1 FROM pg_extension WHERE extname = 'vector'
     ) THEN
@@ -16,6 +19,8 @@ BEGIN
         RAISE NOTICE 'pgvector extension already exists';
     END IF;
 
+    -- Initialize Apache AGE
+    -- Removed redundant duplicate block found in original version
     IF NOT EXISTS (
         SELECT 1 FROM pg_extension WHERE extname = 'age'
     ) THEN
@@ -26,6 +31,7 @@ BEGIN
         RAISE NOTICE 'Apache AGE extension already exists';
     END IF;
 
+    -- Retrieve and report versions for logs
     SELECT extversion INTO vector_version
     FROM pg_extension WHERE extname = 'vector';
 
