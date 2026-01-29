@@ -36,7 +36,7 @@ COPY --from=builder /usr/lib/postgresql/${PG_VERSION}/extension/age* /usr/share/
 COPY --from=builder /usr/lib/postgresql/${PG_VERSION}/lib/vector.so /usr/lib/postgresql/${PG_VERSION}/lib/
 COPY --from=builder /usr/share/postgresql/${PG_VERSION}/extension/vector* /usr/share/postgresql/${PG_VERSION}/extension/
 
-# Persistence-safe config
+# Stage 3: Persistence-safe config
 # This ensures AGE is loaded even if a volume is already present
 RUN echo "shared_preload_libraries = 'age'" >> /usr/share/postgresql/postgresql.conf.sample
 
