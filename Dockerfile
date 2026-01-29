@@ -5,7 +5,7 @@ FROM postgres:${PG_MAJOR} AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && apt-get install -y \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     postgresql-client-${PG_MAJOR} \
     postgresql-server-dev-${PG_MAJOR} \
@@ -14,17 +14,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
-# Use the dedicated PG branch for stability
-RUN git clone --branch PG${PG_MAJOR} --depth 1 https://github.com/apache/age.git
+RUN git clone --branch PG${PG_MAJOR} --depth 1 https://github.com/apache/age.git && \
+    git clone --branch v0.8.1 --depth 1 https://github.com/pgvector/pgvector.git
 
 WORKDIR /tmp/age
 RUN make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config install
 
-WORKDIR /tmp
-RUN git clone --branch v0.8.1 --depth 1 https://github.com/pgvector/pgvector.git
 WORKDIR /tmp/pgvector
-RUN make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config clean
-RUN make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config OPTFLAGS="" install
+RUN make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config clean && \
+    make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config OPTFLAGS="" install
 
 # Stage 2: Runtime
 FROM postgres:${PG_MAJOR}
