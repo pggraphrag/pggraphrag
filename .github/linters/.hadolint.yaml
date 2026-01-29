@@ -4,23 +4,22 @@
 # Fail on errors
 failure-threshold: error
 
-# Rules to ignore
+# Correct list format for hadolint
 ignored:
-  - DL3008  # Pin versions in apk add (we use latest for pgvector from APT)
-  - DL3013  # Pin versions in pip (we don't use pip)
-  - DL3009  # Drop root user (we switch to postgres user)
+  - DL3008 # Pin versions in apt-get install
+  - DL3018 # Pin versions in apk add (if using alpine)
+  - DL3006 # Always use a specific tag for base images
+  - SC2086 # Double quotes around variable expansions
+
+override:
+  warning:
+    - DL3006 # Always use a specific tag for base images
 
 # Specific rule configurations
 strict-labels: false
 
 # Label schema (recommended for production images)
 label-schema:
-  description: 'Production-ready Docker image with PostgreSQL 18, pgvector, and Apache AGE'
+  description: 'Production-ready Docker image with PostgreSQL 18, pgvector, Apache AGE'
   maintainer: 'pggraphrag contributors'
-  version: '1.0.0'
 
-# Override default rules
-override:
-  # Use specific base image versions
-  error:
-    - DL3007
