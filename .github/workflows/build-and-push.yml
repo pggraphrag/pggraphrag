@@ -29,6 +29,7 @@ jobs:
   build-and-push:
     name: Build PG ${{ matrix.pg_version }}
     runs-on: ubuntu-latest
+    needs: lint-and-scan
     strategy:
       fail-fast: false
       matrix:
@@ -76,16 +77,15 @@ jobs:
             # SHA tags for debugging
             type=sha,prefix=${{ matrix.pg_version }}-sha-,format=short
 
-      - name: Build and push
+      - name: Build image
         id: build
         uses: docker/build-push-action@v6
         with:
           context: .
-          # Build single platform on PRs (for load), multi-platform when pushing
+          # Build single platform on PRs, multi-platform for pushes
           platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
-          # We load to local docker if it's a PR, so the test job can use it
-          push: ${{ github.event_name != 'pull_request' }}
-          load: ${{ github.event_name == 'pull_request' }}
+          # Load to local docker for scanning
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -95,9 +95,7 @@ jobs:
             PGVECTOR_VERSION=${{ matrix.pgvector_version }}
             AGE_VERSION=${{ matrix.age_version }}
 
-      - name: Run Trivy scanner
-        # Skip SARIF upload on Pull Requests from forks to avoid permission errors
-        if: github.event_name != 'pull_request'
+      - name: Run Trivy scanner on built image
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.pg_version }}
@@ -111,6 +109,22 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-pg${{ matrix.pg_version }}'
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            PG_MAJOR=${{ matrix.pg_version }}
+            PGVECTOR_VERSION=${{ matrix.pgvector_version }}
+            AGE_VERSION=${{ matrix.age_version }}
 
   create-manifest:
     name: Create Multi-Arch Manifest

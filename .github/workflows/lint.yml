@@ -9,6 +9,8 @@ on:
 jobs:
   lint-and-scan:
     runs-on: ubuntu-latest
+    outputs:
+      status: ${{ job.status }}
     steps:
       - uses: actions/checkout@v4
 
