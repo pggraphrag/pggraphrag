@@ -6,7 +6,7 @@ DECLARE
     vector_version text;
     age_version text;
 BEGIN
-    -- Configure search path for Apache AGE 
+    -- Configure search path for Apache AGE
     SET search_path = ag_catalog, "$user", public;
 
     -- Initialize pgvector
