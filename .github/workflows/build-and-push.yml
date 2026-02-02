@@ -28,7 +28,7 @@ permissions:
 jobs:
   lint:
     name: Lint & Security
-    uses: ./.github/workflows/lint-and-scan.yml@main
+    uses: ./.github/workflows/lint-and-scan.yml
 
   build-and-push:
     name: Build PG ${{ matrix.pg_version }}
