@@ -32,7 +32,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pg_version: [16, 17, 18]
+        include:
+          - pg_version: 16
+            pgvector_version: v0.8.1
+            age_version: PG16_1.5.0
+          - pg_version: 17
+            pgvector_version: v0.8.1
+            age_version: PG17_1.6.0
+          - pg_version: 18
+            pgvector_version: v0.8.1
+            age_version: PG18_1.7.0
 
     steps:
       - name: Checkout repository
@@ -58,11 +67,14 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=pg${{ matrix.pg_version }}
-            type=raw,value=latest,enable=${{ matrix.pg_version == '18' && github.ref == 'refs/heads/main' }}
-            type=raw,value=pg${{ matrix.pg_version }}-latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}}
-            type=sha,prefix=pg${{ matrix.pg_version }}-sha-,format=short
+            # Primary tag: just the PG version (e.g., 18)
+            type=raw,value=${{ matrix.pg_version }}
+            # Versioned tag: PG-pgvector-AGE (e.g., 18-0.8.1-1.7.0)
+            type=raw,value=${{ matrix.pg_version }}-${{ matrix.pgvector_version }}-${{ matrix.age_version }}
+            # Latest tag (only for PG18 on main branch)
+            type=raw,value=latest,enable=${{ matrix.pg_version == 18 && github.ref == 'refs/heads/main' }}
+            # SHA tags for debugging
+            type=sha,prefix=${{ matrix.pg_version }}-sha-,format=short
 
       - name: Build and push
         id: build
@@ -80,13 +92,15 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PG_MAJOR=${{ matrix.pg_version }}
+            PGVECTOR_VERSION=${{ matrix.pgvector_version }}
+            AGE_VERSION=${{ matrix.age_version }}
 
       - name: Run Trivy scanner
         # Skip SARIF upload on Pull Requests from forks to avoid permission errors
         if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pg${{ matrix.pg_version }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.pg_version }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -118,4 +132,4 @@ jobs:
         run: |
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pg18
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:18
