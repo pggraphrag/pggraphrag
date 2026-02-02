@@ -1,8 +1,10 @@
-# --- Stage 1: The Builder ---
-FROM postgres:18 AS builder
-
-# Build args (must be provided as build args)
+# Build arg to set PostgreSQL version (must come before FROM)
 ARG PG_MAJOR=18
+
+# --- Stage 1: The Builder ---
+FROM postgres:"${PG_MAJOR}" AS builder
+
+# Extension version build args
 ARG PGVECTOR_VERSION=0.8.1
 ARG AGE_VERSION
 
