@@ -17,4 +17,3 @@ override:
 
 # Specific rule configurations
 strict-labels: false
-
