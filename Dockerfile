@@ -25,25 +25,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /tmp/build
 
 # 1. Build Apache AGE
-# Set AGE version based on PG_MAJOR if not explicitly provided
-RUN if [ -z "$AGE_VERSION" ]; then \
-      case "$PG_MAJOR" in \
-        16) AGE_VER="v1.5.0" ;; \
-        17) AGE_VER="v1.6.0" ;; \
-        18) AGE_VER="v1.7.0" ;; \
-        *)  AGE_VER="" ;; \
-      esac; \
-    else \
-      AGE_VER="$AGE_VERSION"; \
-    fi && \
-    BRANCH_NAME="PG${PG_MAJOR}" && \
-    if [ -n "$AGE_VER" ]; then \
-      git clone --branch "$BRANCH_NAME" --depth 1 https://github.com/apache/age.git . && \
-      git fetch --tags origin && \
-      git checkout "$AGE_VER"; \
-    else \
-      git clone --branch "$BRANCH_NAME" --depth 1 https://github.com/apache/age.git .; \
-    fi && \
+# Clone the appropriate branch for each PostgreSQL version
+RUN BRANCH_NAME="PG${PG_MAJOR}" && \
+    git clone --branch "$BRANCH_NAME" --depth 1 https://github.com/apache/age.git . && \
     make install DESTDIR=/tmp/build
 
 # 2. Build pgvector (pinned version for effective caching)
