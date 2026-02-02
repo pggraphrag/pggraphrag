@@ -6,7 +6,7 @@ FROM postgres:"${PG_MAJOR}" AS builder
 
 # Extension version build args
 ARG PGVECTOR_VERSION=0.8.1
-ARG AGE_VERSION
+ARG AGE_VERSION=1.7.0
 
 # Install build-essential and dependencies for AGE & pgvector
 # Included ca-certificates to fix SSL/Git errors
