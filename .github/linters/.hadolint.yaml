@@ -18,8 +18,3 @@ override:
 # Specific rule configurations
 strict-labels: false
 
-# Label schema (recommended for production images)
-label-schema:
-  description: 'Production-ready Docker image with PostgreSQL 18, pgvector, Apache AGE'
-  maintainer: 'pggraphrag contributors'
-
