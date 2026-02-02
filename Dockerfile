@@ -2,7 +2,7 @@
 ARG PG_MAJOR=18
 
 # Extension versions (must be provided as build args)
-ARG PGVECTOR_VERSION=v0.8.1
+ARG PGVECTOR_VERSION=0.8.1
 ARG AGE_VERSION
 
 # --- Stage 1: The Builder ---
