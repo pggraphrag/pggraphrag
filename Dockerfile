@@ -3,7 +3,6 @@ ARG PG_MAJOR=18
 
 # Extension versions (can be overridden at build time)
 ARG PGVECTOR_VERSION=v0.8.1
-ARG AGE_VERSION  # Will be set dynamically based on PG_MAJOR
 
 # --- Stage 1: The Builder ---
 FROM postgres:"${PG_MAJOR}" AS builder
@@ -25,10 +24,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /tmp/build
 
 # 1. Build Apache AGE
-# Clone the appropriate branch for each PostgreSQL version
+# Pin to specific version tags for effective layer caching
 WORKDIR /tmp/age
-RUN BRANCH_NAME="PG${PG_MAJOR}" && \
-    git clone --branch "$BRANCH_NAME" --depth 1 https://github.com/apache/age.git . && \
+RUN case "${PG_MAJOR}" in \
+      16) AGE_TAG="v1.5.0" ;; \
+      17) AGE_TAG="v1.6.0" ;; \
+      18) AGE_TAG="v1.7.0" ;; \
+      *)  AGE_TAG="" ;; \
+    esac && \
+    git clone --branch "$AGE_TAG" --depth 1 https://github.com/apache/age.git . && \
     make install DESTDIR=/tmp/build
 
 # 2. Build pgvector (pinned version for effective caching)
