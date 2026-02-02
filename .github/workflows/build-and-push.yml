@@ -3,9 +3,13 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main]
-    tags: ['v*']
+  tags: ['v*']
   pull_request:
     branches: [main]
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/build-and-push.yml'
+      - '.pre-commit-config.yaml'
   workflow_dispatch:
     inputs:
       pg_version:
