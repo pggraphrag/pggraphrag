@@ -49,5 +49,4 @@ htmlcov/
 .pre-commit-config-local.yaml
 
 # Agents
-.claude
 .opencode
