@@ -35,16 +35,13 @@ jobs:
         include:
           - pg_version: 16
             pgvector_version: v0.8.1
-            age_version: PG16_1.5.0
-            age_version_short: 1.5.0
+            age_version: v1.5.0
           - pg_version: 17
             pgvector_version: v0.8.1
-            age_version: PG17_1.6.0
-            age_version_short: 1.6.0
+            age_version: v1.6.0
           - pg_version: 18
             pgvector_version: v0.8.1
-            age_version: PG18_1.7.0
-            age_version_short: 1.7.0
+            age_version: v1.7.0
 
     steps:
       - name: Checkout repository
@@ -73,7 +70,7 @@ jobs:
             # Primary tag: just the PG version (e.g., 18)
             type=raw,value=${{ matrix.pg_version }}
             # Versioned tag: PG-pgvector-AGE (e.g., 18-v0.8.1-1.7.0)
-            type=raw,value=${{ matrix.pg_version }}-${{ matrix.pgvector_version }}-${{ matrix.age_version_short }}
+            type=raw,value=${{ matrix.pg_version }}-${{ matrix.pgvector_version }}-${{ matrix.age_version }}
             # Latest tag (only for PG18 on main branch)
             type=raw,value=latest,enable=${{ matrix.pg_version == 18 && github.ref == 'refs/heads/main' }}
             # SHA tags for debugging
