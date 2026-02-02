@@ -3,6 +3,7 @@ ARG PG_MAJOR=18
 
 # Extension versions (can be overridden at build time)
 ARG PGVECTOR_VERSION=v0.8.1
+ARG AGE_VERSION  # Optional override, defaults to version per PG_MAJOR
 
 # --- Stage 1: The Builder ---
 FROM postgres:"${PG_MAJOR}" AS builder
@@ -26,12 +27,16 @@ WORKDIR /tmp/build
 # 1. Build Apache AGE
 # Pin to specific version tags for effective layer caching
 WORKDIR /tmp/age
-RUN case "${PG_MAJOR}" in \
-      16) AGE_TAG="v1.5.0" ;; \
-      17) AGE_TAG="v1.6.0" ;; \
-      18) AGE_TAG="v1.7.0" ;; \
-      *)  AGE_TAG="" ;; \
-    esac && \
+RUN if [ -n "$AGE_VERSION" ]; then \
+      AGE_TAG="$AGE_VERSION"; \
+    else \
+      case "${PG_MAJOR}" in \
+        16) AGE_TAG="v1.5.0" ;; \
+        17) AGE_TAG="v1.6.0" ;; \
+        18) AGE_TAG="v1.7.0" ;; \
+        *)  AGE_TAG="" ;; \
+      esac; \
+    fi && \
     git clone --branch "$AGE_TAG" --depth 1 https://github.com/apache/age.git . && \
     make install DESTDIR=/tmp/build
 
