@@ -8,6 +8,11 @@ ARG AGE_VERSION
 # --- Stage 1: The Builder ---
 FROM postgres:"${PG_MAJOR}" AS builder
 
+# Re-declare build args (FROM resets them)
+ARG PG_MAJOR
+ARG PGVECTOR_VERSION
+ARG AGE_VERSION
+
 # Install build-essential and dependencies for AGE & pgvector
 # Included ca-certificates to fix SSL/Git errors
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -37,6 +42,11 @@ RUN git clone --branch "$PGVECTOR_VERSION" --depth 1 https://github.com/pgvector
 
 # --- Stage 2: The Runtime ---
 FROM postgres:"${PG_MAJOR}"
+
+# Re-declare build args (FROM resets them)
+ARG PG_MAJOR
+ARG PGVECTOR_VERSION
+ARG AGE_VERSION
 
 # Copy everything from the staging area in one clean layer
 COPY --from=builder /tmp/build /
