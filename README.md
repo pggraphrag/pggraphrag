@@ -6,14 +6,14 @@ Production-ready Docker images combining PostgreSQL with pgvector (vector search
 
 ```bash
 # PostgreSQL 18 (recommended)
-docker pull ghcr.io/pggraphrag/pggraphrag:pg18
+docker pull ghcr.io/pggraphrag/pggraphrag:18
 
 # Run
 docker run -d --name pggraphrag \
   -e POSTGRES_PASSWORD=mysecurepassword \
   -p 5432:5432 \
   -v pgdata:/var/lib/postgresql/data \
-  ghcr.io/pggraphrag/pggraphrag:pg18
+  ghcr.io/pggraphrag/pggraphrag:18
 
 # Connect
 docker exec -it pggraphrag psql -U postgres
@@ -23,9 +23,9 @@ docker exec -it pggraphrag psql -U postgres
 
 | Version | Tag | Extensions | Build Status | Image Info |
 |---------|-----|-----------|--------------|-------------|
-| **16** | `pg16` | pgvector 0.8.1, AGE 1.5.0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/pg16)](https://ghcr.io/pggraphrag/pggraphrag:pg16) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/pg16)](https://ghcr.io/pggraphrag/pggraphrag:pg16) |
-| **17** | `pg17` | pgvector 0.8.1, AGE 1.6.0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/pg17)](https://ghcr.io/pggraphrag/pggraphrag:pg17) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/pg17)](https://ghcr.io/pggraphrag/pggraphrag:pg17) |
-| **18** | `pg18`, `latest` | pgvector 0.8.1, AGE 1.7.0 ⚠️ | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/pg18)](https://ghcr.io/pggraphrag/pggraphrag:pg18) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/pg18)](https://ghcr.io/pggraphrag/pggraphrag:pg18) |
+| **16** | `16` \| `16-v0.8.1-1.5.0` | pgvector 0.8.1, AGE 1.5.0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/16)](https://ghcr.io/pggraphrag/pggraphrag:16) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/16)](https://ghcr.io/pggraphrag/pggraphrag:16) |
+| **17** | `17` \| `17-v0.8.1-1.6.0` | pgvector 0.8.1, AGE 1.6.0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/17)](https://ghcr.io/pggraphrag/pggraphrag:17) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/17)](https://ghcr.io/pggraphrag/pggraphrag:17) |
+| **18** | `18`, `latest` \| `18-v0.8.1-1.7.0` | pgvector 0.8.1, AGE 1.7.0 ⚠️ | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/18)](https://ghcr.io/pggraphrag/pggraphrag:18) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/18)](https://ghcr.io/pggraphrag/pggraphrag:18) |
 
 **Note**: Apache AGE v1.7.0 for PostgreSQL 18 is currently in pre-release status.
 

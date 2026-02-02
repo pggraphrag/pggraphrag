@@ -1,8 +1,12 @@
-# Defaulting to the latest stable Postgres 18
+# Build arg to set PostgreSQL version (must come before FROM)
 ARG PG_MAJOR=18
 
 # --- Stage 1: The Builder ---
 FROM postgres:"${PG_MAJOR}" AS builder
+
+# Extension version build args
+ARG PGVECTOR_VERSION=0.8.1
+ARG AGE_VERSION=1.7.0
 
 # Install build-essential and dependencies for AGE & pgvector
 # Included ca-certificates to fix SSL/Git errors
@@ -20,20 +24,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create a staging area for all compiled binaries
 WORKDIR /tmp/build
 
-# 1. Build Apache AGE (Using the dedicated PG branch)
+# 1. Build Apache AGE
+# Use version from build arg (provided by workflow)
 WORKDIR /tmp/age
-RUN git clone --branch PG"${PG_MAJOR}" --depth 1 https://github.com/apache/age.git . \
-    && make install DESTDIR=/tmp/build
+RUN git clone --branch "$AGE_VERSION" --depth 1 https://github.com/apache/age.git . && \
+    make install DESTDIR=/tmp/build
 
-# 2. Build pgvector (Dynamically finding the latest release tag)
+# 2. Build pgvector (pinned version for effective caching)
 WORKDIR /tmp/pgvector
-RUN git clone https://github.com/pgvector/pgvector.git . && \
-    LATEST_TAG=$(git describe --tags "$(git rev-list --tags --max-count=1)") && \
-    git checkout "$LATEST_TAG" && \
+RUN git clone --branch "$PGVECTOR_VERSION" --depth 1 https://github.com/pgvector/pgvector.git . && \
     make OPTFLAGS="" install DESTDIR=/tmp/build
 
 # --- Stage 2: The Runtime ---
 FROM postgres:"${PG_MAJOR}"
+
+# Re-declare PG_MAJOR for this stage
+ARG PG_MAJOR
 
 # Copy everything from the staging area in one clean layer
 COPY --from=builder /tmp/build /
