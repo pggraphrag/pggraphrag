@@ -1,16 +1,9 @@
-# Defaulting to the latest stable Postgres 18
-ARG PG_MAJOR=18
-
-# Extension versions (must be provided as build args)
-ARG PGVECTOR_VERSION=0.8.1
-ARG AGE_VERSION
-
 # --- Stage 1: The Builder ---
-FROM postgres:"${PG_MAJOR}" AS builder
+FROM postgres:18 AS builder
 
-# Re-declare build args (FROM resets them)
-ARG PG_MAJOR
-ARG PGVECTOR_VERSION
+# Build args (must be provided as build args)
+ARG PG_MAJOR=18
+ARG PGVECTOR_VERSION=0.8.1
 ARG AGE_VERSION
 
 # Install build-essential and dependencies for AGE & pgvector
@@ -43,10 +36,8 @@ RUN git clone --branch "$PGVECTOR_VERSION" --depth 1 https://github.com/pgvector
 # --- Stage 2: The Runtime ---
 FROM postgres:"${PG_MAJOR}"
 
-# Re-declare build args (FROM resets them)
+# Re-declare PG_MAJOR for this stage
 ARG PG_MAJOR
-ARG PGVECTOR_VERSION
-ARG AGE_VERSION
 
 # Copy everything from the staging area in one clean layer
 COPY --from=builder /tmp/build /
