@@ -3,8 +3,8 @@ name: Lint & Security
 on:
   push:
     branches: [main, develop]
-  pull_request:
-    branches: [main]
+  pull_request:  # Run on all PRs
+  workflow_call:  # Allow other workflows to call this
 
 jobs:
   lint-and-scan:
