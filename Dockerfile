@@ -26,11 +26,13 @@ WORKDIR /tmp/build
 
 # 1. Build Apache AGE
 # Clone the appropriate branch for each PostgreSQL version
+WORKDIR /tmp/age
 RUN BRANCH_NAME="PG${PG_MAJOR}" && \
     git clone --branch "$BRANCH_NAME" --depth 1 https://github.com/apache/age.git . && \
     make install DESTDIR=/tmp/build
 
 # 2. Build pgvector (pinned version for effective caching)
+WORKDIR /tmp/pgvector
 RUN git clone --branch "$PGVECTOR_VERSION" --depth 1 https://github.com/pgvector/pgvector.git . && \
     make OPTFLAGS="" install DESTDIR=/tmp/build
 
