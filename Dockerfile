@@ -4,7 +4,7 @@ ARG PG_MAJOR=18
 # --- Stage 1: The Builder ---
 FROM postgres:"${PG_MAJOR}" AS builder
 
-# Extension version build args
+# Extension version build args (git tags for cloning)
 ARG PGVECTOR_VERSION=v0.8.1
 ARG AGE_VERSION=PG18/v1.7.0-rc0
 
