@@ -21,11 +21,11 @@ docker exec -it pggraphrag psql -U postgres
 
 ## Available Versions
 
-| Version | Tag | Extensions | Build Status | Image Info |
-|---------|-----|-----------|--------------|-------------|
-| **16** | `16` \| `16-0.8.1-1.6.0` | pgvector v0.8.1, AGE v1.6.0-rc0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/16)](https://ghcr.io/pggraphrag/pggraphrag:16) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/16)](https://ghcr.io/pggraphrag/pggraphrag:16) |
-| **17** | `17` \| `17-0.8.1-1.6.0` | pgvector v0.8.1, AGE v1.6.0-rc0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/17)](https://ghcr.io/pggraphrag/pggraphrag:17) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/17)](https://ghcr.io/pggraphrag/pggraphrag:17) |
-| **18** | `18`, `latest` \| `18-0.8.1-1.7.0` | pgvector v0.8.1, AGE v1.7.0-rc0 | [![Build](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/pggraphrag/pggraphrag/actions/workflows/build-and-push.yml) | [![Size](https://img.shields.io/docker/image-size/ghcr.io/pggraphrag/pggraphrag/18)](https://ghcr.io/pggraphrag/pggraphrag:18) [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/18)](https://ghcr.io/pggraphrag/pggraphrag:18) |
+| Version | Tag | Extensions | Image |
+|---------|-----|-----------|-------|
+| **16** | `16` \| `16-0.8.1-1.6.0` | pgvector v0.8.1, AGE v1.6.0-rc0 | [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/16)](https://ghcr.io/pggraphrag/pggraphrag:16) |
+| **17** | `17` \| `17-0.8.1-1.6.0` | pgvector v0.8.1, AGE v1.6.0-rc0 | [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/17)](https://ghcr.io/pggraphrag/pggraphrag:17) |
+| **18** | `18`, `latest` \| `18-0.8.1-1.7.0` | pgvector v0.8.1, AGE v1.7.0-rc0 | [![Pulls](https://img.shields.io/docker/pulls/ghcr.io/pggraphrag/pggraphrag/18)](https://ghcr.io/pggraphrag/pggraphrag:18) |
 
 ## Features
 
