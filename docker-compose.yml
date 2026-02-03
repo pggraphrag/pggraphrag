@@ -1,0 +1,141 @@
+services:
+  pggraphrag:
+    image: ghcr.io/pggraphrag/pggraphrag:18
+    container_name: pggraphrag
+    restart: unless-stopped
+
+    # Environment variables (use .env file for sensitive values)
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS:--encoding=UTF8 --locale=C}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD:-scram-sha-256}
+
+    # Volume mounts for data persistence
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ${BACKUP_MOUNT_PATH:-./backups}:/backups:rw
+
+    # Port mapping (host:container)
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    # Health check configuration
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_LIMIT:-2.0}
+          memory: ${MEMORY_LIMIT:-2G}
+        reservations:
+          cpus: ${CPU_RESERVATION:-0.5}
+          memory: ${MEMORY_RESERVATION:-512M}
+
+    # Logging configuration
+    logging:
+      driver: ${LOGGING_DRIVER:-json-file}
+      options:
+        max-size: ${LOGGING_MAX_SIZE:-10m}
+        max-file: ${LOGGING_MAX_FILE:-3}
+        labels: "service,pg_version,environment"
+
+    # Network configuration
+    networks:
+      - pggraphrag-network
+
+    # Labels for metadata
+    labels:
+      - "com.pggraphrag.description=PostgreSQL with pgvector and Apache AGE"
+      - "com.pggraphrag.version=18"
+
+# Named volume for data persistence
+volumes:
+  pgdata:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}
+
+# Network configuration
+networks:
+  pggraphrag-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: pggraphrag-br
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      driver: default
+      config:
+        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
+
+# Profile-based configurations
+---
+# Development profile (lower resources, debug logging)
+x-dev: &dev
+  pggraphrag:
+    environment:
+      POSTGRES_LOG_STATEMENT: ${POSTGRES_LOG_STATEMENT:-all}
+      POSTGRES_LOG_DURATION: ${POSTGRES_LOG_DURATION:-on}
+    deploy:
+      resources:
+        limits:
+          cpus: 1.0
+          memory: 1G
+        reservations:
+          cpus: 0.25
+          memory: 256M
+    logging:
+      options:
+        max-size: 50m
+        max-file: 5
+
+# Staging profile
+x-staging: &staging
+  pggraphrag:
+    deploy:
+      resources:
+        limits:
+          cpus: 2.0
+          memory: 4G
+        reservations:
+          cpus: 1.0
+          memory: 1G
+    healthcheck:
+      interval: 20s
+      timeout: 3s
+      retries: 5
+
+# Production profile (higher resources, strict limits)
+x-production: &production
+  pggraphrag:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: 4.0
+          memory: 8G
+        reservations:
+          cpus: 2.0
+          memory: 2G
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    healthcheck:
+      interval: 15s
+      timeout: 3s
+      start_period: 60s
+      retries: 5
