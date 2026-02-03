@@ -67,13 +67,19 @@ jobs:
         include:
           - pg_version: 16
             pgvector_version: 0.8.1
-            age_version: 1.5.0
+            pgvector_tag: v0.8.1
+            age_version: 1.6.0
+            age_tag: PG16/v1.6.0-rc0
           - pg_version: 17
             pgvector_version: 0.8.1
+            pgvector_tag: v0.8.1
             age_version: 1.6.0
+            age_tag: PG17/v1.6.0-rc0
           - pg_version: 18
             pgvector_version: 0.8.1
+            pgvector_tag: v0.8.1
             age_version: 1.7.0
+            age_tag: PG18/v1.7.0-rc0
 
     steps:
       - name: Checkout repository
@@ -105,8 +111,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          # Build single platform on PRs, multi-platform for pushes
-          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          # Build single platform (load: true requires single-platform)
+          platforms: linux/amd64
           # Load to local docker for scanning
           load: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -115,8 +121,8 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PG_MAJOR=${{ matrix.pg_version }}
-            PGVECTOR_VERSION=${{ matrix.pgvector_version }}
-            AGE_VERSION=${{ matrix.age_version }}
+            PGVECTOR_VERSION=${{ matrix.pgvector_tag }}
+            AGE_VERSION=${{ matrix.age_tag }}
 
       - name: Run Trivy scanner on built image
         uses: aquasecurity/trivy-action@0.29.0
@@ -144,13 +150,19 @@ jobs:
         include:
           - pg_version: 16
             pgvector_version: 0.8.1
-            age_version: 1.5.0
+            pgvector_tag: v0.8.1
+            age_version: 1.6.0
+            age_tag: PG16/v1.6.0-rc0
           - pg_version: 17
             pgvector_version: 0.8.1
+            pgvector_tag: v0.8.1
             age_version: 1.6.0
+            age_tag: PG17/v1.6.0-rc0
           - pg_version: 18
             pgvector_version: 0.8.1
+            pgvector_tag: v0.8.1
             age_version: 1.7.0
+            age_tag: PG18/v1.7.0-rc0
 
     steps:
       - name: Checkout repository
@@ -197,8 +209,8 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PG_MAJOR=${{ matrix.pg_version }}
-            PGVECTOR_VERSION=${{ matrix.pgvector_version }}
-            AGE_VERSION=${{ matrix.age_version }}
+            PGVECTOR_VERSION=${{ matrix.pgvector_tag }}
+            AGE_VERSION=${{ matrix.age_tag }}
 
   update-badges:
     name: Update Badges

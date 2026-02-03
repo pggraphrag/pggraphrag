@@ -4,9 +4,9 @@ ARG PG_MAJOR=18
 # --- Stage 1: The Builder ---
 FROM postgres:"${PG_MAJOR}" AS builder
 
-# Extension version build args
-ARG PGVECTOR_VERSION=0.8.1
-ARG AGE_VERSION=1.7.0
+# Extension version build args (git tags for cloning)
+ARG PGVECTOR_VERSION=v0.8.1
+ARG AGE_VERSION=PG18/v1.7.0-rc0
 
 # Install build-essential and dependencies for AGE & pgvector
 # Included ca-certificates to fix SSL/Git errors
