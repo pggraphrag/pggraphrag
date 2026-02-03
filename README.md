@@ -72,7 +72,9 @@ Extensions are loaded automatically on container startup:
 
 ## Versioning Policy
 
-This image tracks the **latest stable versions** of PostgreSQL, pgvector, and Apache AGE rather than maintaining a custom project version number. When you pull this image, you always get the most recent stable releases of each component as supported by the PostgreSQL version you're using. This reduces maintenance overhead while ensuring security updates are included automatically through the underlying projects' release cycles.
+Extension versions are **explicitly pinned** in the Dockerfile and CI workflow for reproducibility and stability. The tag format `{PG_VERSION}-{PGVECTOR_VERSION}-{AGE_VERSION}` (e.g., `18-v0.8.1-1.7.0`) encodes the exact extension versions used.
+
+To update extension versions, modify the version args in the Dockerfile and the CI workflow matrix. This approach ensures consistent builds and allows you to control when to adopt new extension releases.
 
 ## License
 
