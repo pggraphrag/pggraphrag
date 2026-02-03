@@ -49,7 +49,26 @@ COPY init-scripts/ /docker-entrypoint-initdb.d/
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD pg_isready -U "${POSTGRES_USER:-postgres}" || exit 1
 
-LABEL description="Production-ready PostgreSQL ${PG_MAJOR} with Apache AGE & pgvector"
+# Re-declare build args for labels
+ARG PGVECTOR_VERSION
+ARG AGE_VERSION
+
+# OCI-compliant image labels
+LABEL org.opencontainers.image.title="pggraphrag" \
+    org.opencontainers.image.description="Production-ready PostgreSQL ${PG_MAJOR} with pgvector (vector search) and Apache AGE (graph database) extensions" \
+    org.opencontainers.image.version="${PG_MAJOR}-${PGVECTOR_VERSION}-${AGE_VERSION}" \
+    org.opencontainers.image.source="https://github.com/pggraphrag/pggraphrag" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.vendor="pggraphrag" \
+    org.opencontainers.image.documentation="https://github.com/pggraphrag/pggraphrag#readme" \
+    org.opencontainers.image.authors="pggraphrag" \
+    # Extension version labels
+    pggraphrag.pgvector.version="${PGVECTOR_VERSION}" \
+    pggraphrag.age.version="${AGE_VERSION}" \
+    # License compliance notices
+    pggraphrag.licenses.pgvector="PostgreSQL License" \
+    pggraphrag.licenses.age="Apache-2.0" \
+    pggraphrag.licenses.postgresql="PostgreSQL License"
 
 USER postgres
 EXPOSE 5432
