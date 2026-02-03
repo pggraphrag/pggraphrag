@@ -66,14 +66,14 @@ jobs:
       matrix:
         include:
           - pg_version: 16
-            pgvector_version: 0.8.1
-            age_version: PG16
+            pgvector_version: v0.8.1
+            age_version: PG16/v1.6.0-rc0
           - pg_version: 17
-            pgvector_version: 0.8.1
-            age_version: PG17
+            pgvector_version: v0.8.1
+            age_version: PG17/v1.6.0-rc0
           - pg_version: 18
-            pgvector_version: 0.8.1
-            age_version: PG18
+            pgvector_version: v0.8.1
+            age_version: PG18/v1.7.0-rc0
 
     steps:
       - name: Checkout repository
@@ -143,14 +143,14 @@ jobs:
       matrix:
         include:
           - pg_version: 16
-            pgvector_version: 0.8.1
-            age_version: PG16
+            pgvector_version: v0.8.1
+            age_version: PG16/v1.6.0-rc0
           - pg_version: 17
-            pgvector_version: 0.8.1
-            age_version: PG17
+            pgvector_version: v0.8.1
+            age_version: PG17/v1.6.0-rc0
           - pg_version: 18
-            pgvector_version: 0.8.1
-            age_version: PG18
+            pgvector_version: v0.8.1
+            age_version: PG18/v1.7.0-rc0
 
     steps:
       - name: Checkout repository
