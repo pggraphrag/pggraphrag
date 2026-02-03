@@ -105,8 +105,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          # Build single platform on PRs, multi-platform for pushes
-          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          # Build single platform (load: true requires single-platform)
+          platforms: linux/amd64
           # Load to local docker for scanning
           load: true
           tags: ${{ steps.meta.outputs.tags }}
