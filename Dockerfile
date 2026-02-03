@@ -12,7 +12,9 @@ ARG AGE_VERSION=PG18/v1.7.0-rc0
 
 # Install build-essential and dependencies for AGE & pgvector
 # Included ca-certificates to fix SSL/Git errors
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     ca-certificates \
